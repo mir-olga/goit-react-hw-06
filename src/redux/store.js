@@ -1,44 +1,37 @@
-/*файл створення стору
-
-{
-  contacts: {
-		items: []
-	},
-  filters: {
-		name: ""
-	}
-}*/
-
-import { createStore } from "redux";//створюэмо Store
+import { configureStore } from '@reduxjs/toolkit';
 import { contactsReducer } from './contactsSlice';
-import { filtersReducer } from './filtersSlice';
-import { composeWithDevTools } from "@redux-devtools/extension/lib/types/logOnly";
+import { filterReducer } from './filtersSlice';
+import {
+  persistStore,
+  persistReducer,
+  FLUSH,
+  REHYDRATE,
+  PAUSE,
+  PERSIST,
+  PURGE,
+  REGISTER,
+} from 'redux-persist';
+import storage from 'redux-persist/lib/storage';
 
-
-// Початкове значення стану Redux для кореневого редюсера,
-// якщо не передати параметр preloadedState.
-
-
-const initialState = {
-    contacts: {
-          items: contactsReducer
-      },
-    filters: {
-          name: filtersReducer
-      }
-  }
-
-// Поки що використовуємо редюсер який
-// тільки повертає отриманий стан
-const reducer = (state = initialState, action) => { //state = initialState, щоб не було в перший раз undef
-  return state;
+const persistConfig = {
+  key: 'contacts',
+  storage,
+  whitelist: ['contacts']
 };
 
-export const store = createStore(reducer, composeWithDevTools());
+const persistedContactsReducer = persistReducer(persistConfig, contactsReducer);
 
- /* export const store = configureStore({
-    reducer: rootReducer,
-  });*/
-  
- 
-  
+export const store = configureStore({
+  reducer: {
+    contacts: persistedContactsReducer,
+    filter: filterReducer,
+  },
+  middleware: getDefaultMiddleware =>
+    getDefaultMiddleware({
+      serializableCheck: {
+        ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
+      },
+    }),
+});
+
+export const persistor = persistStore(store);
